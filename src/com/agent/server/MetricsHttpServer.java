@@ -213,6 +213,7 @@ public class MetricsHttpServer {
                 sb.append(",");
             }
             sb.append("\"").append(established).append("\"");
+            c++;
         }
         sb.append("],");
 
