@@ -93,6 +93,7 @@ public class MetricsHttpServer {
         CpuStats     cpu  = CpuCollector.getCpuStats();
         MemoryStats  mem  = MemoryCollector.getMemoryStats();
         LoadAvgStats load = LoadAvgCollector.getLoadAverages();
+        TCPConnectionStats tcp = TCPCollector.getTCPStats();
 
         DiskStats    currDisk = DiskCollector.getDiskStats();
         NetworkStats currNet  = NetworkCollector.getNetworkStats();
@@ -113,11 +114,11 @@ public class MetricsHttpServer {
 
         // Build Prometheus format
         cachedPrometheus = PrometheusExporter.export(
-            cpu, mem, load, currDisk, currNet, topProcs,
+            cpu, mem, load, currDisk, currNet, tcp, topProcs,
             diskReadKBps, diskWriteKBps, netRxKBps, netTxKBps, now);
 
         // Build JSON (kept for compatibility)
-        cachedJson = buildJson(cpu, mem, load,
+        cachedJson = buildJson(cpu, mem, load, tcp,
             diskReadKBps, diskWriteKBps, netRxKBps, netTxKBps,
             topProcs, now);
 
@@ -175,7 +176,7 @@ public class MetricsHttpServer {
     // -------------------------------------------------------------------------
 
     private static String buildJson(
-        CpuStats cpu, MemoryStats mem, LoadAvgStats load,
+        CpuStats cpu, MemoryStats mem, LoadAvgStats load, TCPConnectionStats tcp,
         double diskReadKBps, double diskWriteKBps,
         double netRxKBps, double netTxKBps,
         List<ProcessInfo> procs, long ts)
@@ -199,6 +200,20 @@ public class MetricsHttpServer {
         sb.append("\"load_1m\":").append(fmt(load.oneMin)).append(',');
         sb.append("\"load_5m\":").append(fmt(load.fiveMin)).append(',');
         sb.append("\"load_15m\":").append(fmt(load.fifteenMin)).append(',');
+
+        tcp.stateCounts.forEach( (state, val) -> {
+            sb.append("\"").append(state).append("\":").append(fmt(Double.valueOf(val))).append(',');
+        });
+
+        sb.append("\"established_connections\":["); int c = 0;
+        for(String established : tcp.established)
+        {
+            if(c > 0)
+            {
+                sb.append(",");
+            }
+            sb.append("\"").append(established).append("\"");
+        }
         sb.append("\"disk_read_kbps\":").append(fmt(diskReadKBps)).append(',');
         sb.append("\"disk_write_kbps\":").append(fmt(diskWriteKBps)).append(',');
         sb.append("\"net_rx_kbps\":").append(fmt(netRxKBps)).append(',');

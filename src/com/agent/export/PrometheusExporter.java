@@ -12,6 +12,7 @@ public class PrometheusExporter {
         LoadAvgStats load,
         DiskStats disk,
         NetworkStats net,
+        TCPConnectionStats tcp,
         List<ProcessInfo> topProcs,
         double diskReadKBps,
         double diskWriteKBps,
@@ -56,6 +57,25 @@ public class PrometheusExporter {
               null,
               load.fifteenMin,
               new String[]{"interval"}, new String[]{"15m"}, timestampMs);
+
+        // -- TCP connection state counts --
+
+        tcp.stateCounts.forEach( (state, val) -> {
+            gauge(sb, "tcp_connection_state_counts", "TCP Connection State Counts",
+                    Double.valueOf(val), new String[]{"state"}, new String[]{state}, timestampMs
+                    );
+        });
+
+        /*
+        Commenting as gauges are better used for numeric values
+
+        for(String established : tcp.established)
+        {
+            gauge(sb, "established_connection_address", "Established Connection Remote IP and Port",
+                    0.0, new String[]{"remote_ip_port"}, new String[]{established}, timestampMs);
+        }
+        */
+
 
         // --- Disk I/O rates ---
         gauge(sb, "node_disk_read_kbps",

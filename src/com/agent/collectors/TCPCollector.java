@@ -23,7 +23,7 @@ public class TCPCollector {
         STATES.put("0B", "CLOSING");
     }
 
-    public static TCPConnectionStats getStats() {
+    public static TCPConnectionStats getTCPStats() {
         Map<String, Integer> stateCounts = new HashMap<>();
         List<String> established = new ArrayList<>();
 

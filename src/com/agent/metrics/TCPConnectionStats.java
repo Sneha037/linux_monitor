@@ -1,14 +1,11 @@
 package com.agent.metrics;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TCPConnectionStats
 {
-    private final Map<String, Integer> stateCounts = new HashMap<>();
-    private final List<String> established = new ArrayList<>();
+    public final Map<String, Integer> stateCounts = new LinkedHashMap<>();
+    public final List<String> established = new ArrayList<>();
 
     public TCPConnectionStats(Map<String, Integer> stateCounts, List<String> established)
     {
