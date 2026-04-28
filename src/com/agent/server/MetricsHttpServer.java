@@ -214,6 +214,8 @@ public class MetricsHttpServer {
             }
             sb.append("\"").append(established).append("\"");
         }
+        sb.append("],");
+
         sb.append("\"disk_read_kbps\":").append(fmt(diskReadKBps)).append(',');
         sb.append("\"disk_write_kbps\":").append(fmt(diskWriteKBps)).append(',');
         sb.append("\"net_rx_kbps\":").append(fmt(netRxKBps)).append(',');
