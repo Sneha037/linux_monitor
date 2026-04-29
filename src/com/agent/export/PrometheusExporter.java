@@ -2,6 +2,7 @@ package com.agent.export;
 
 import com.agent.metrics.*;
 import java.util.List;
+import java.util.Map;
 
 
 public class PrometheusExporter {
@@ -13,6 +14,7 @@ public class PrometheusExporter {
         DiskStats disk,
         NetworkStats net,
         TCPConnectionStats tcp,
+        Map<String, LatencyStats> latencyStatsMap,
         List<ProcessInfo> topProcs,
         double diskReadKBps,
         double diskWriteKBps,
@@ -75,6 +77,43 @@ public class PrometheusExporter {
                     0.0, new String[]{"remote_ip_port"}, new String[]{established}, timestampMs);
         }
         */
+
+        // --- Latency stats ---
+
+        /*
+        if(latencyStatsMap != null)
+        {
+            sb.append("# HELP latency_stats_rtt_min_avg_max_jitter_per_target\n");
+            sb.append("# TYPE latency_stats_rtt_min_avg_max_jitter_per_target gauge\n");
+            for(String target : latencyStatsMap.keySet())
+            {
+                LatencyStats stats = latencyStatsMap.get(target);
+                sb.append(String.format("latency_stats{target=\"%s\", rtt=\"%.2f\", min=\"%.2f\", avg=\"%.2f\", max=\"%.2f\", jitter=\"%.2f %n",
+                        target, stats.rtt, stats.min, stats.avg, stats.max, stats.jitter));
+            }
+        }
+        */
+
+        sb.append("# HELP latency_rtt_ms Current RTT in ms\n");
+        sb.append("# TYPE latency_rtt_ms gauge\n");
+        sb.append("# HELP latency_min_ms Min RTT over last 60 samples\n");
+        sb.append("# TYPE latency_min_ms gauge\n");
+        sb.append("# HELP latency_avg_ms Avg RTT over last 60 samples\n");
+        sb.append("# TYPE latency_avg_ms gauge\n");
+        sb.append("# HELP latency_max_ms Max RTT over last 60 samples\n");
+        sb.append("# TYPE latency_max_ms gauge\n");
+        sb.append("# HELP latency_jitter_ms Jitter over last 60 samples\n");
+        sb.append("# TYPE latency_jitter_ms gauge\n");
+
+        latencyStatsMap.forEach((target, stats) -> {
+            String[] keys = {"target"};
+            String[] vals = {target};
+            gauge(sb, "latency_rtt_ms",    null, stats.rtt,    keys, vals, timestampMs);
+            gauge(sb, "latency_min_ms",    null, stats.min,    keys, vals, timestampMs);
+            gauge(sb, "latency_avg_ms",    null, stats.avg,    keys, vals, timestampMs);
+            gauge(sb, "latency_max_ms",    null, stats.max,    keys, vals, timestampMs);
+            gauge(sb, "latency_jitter_ms", null, stats.jitter, keys, vals, timestampMs);
+        });
 
 
         // --- Disk I/O rates ---

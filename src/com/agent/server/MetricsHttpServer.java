@@ -11,7 +11,9 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -94,6 +96,7 @@ public class MetricsHttpServer {
         MemoryStats  mem  = MemoryCollector.getMemoryStats();
         LoadAvgStats load = LoadAvgCollector.getLoadAverages();
         TCPConnectionStats tcp = TCPCollector.getTCPStats();
+        Map<String, LatencyStats> latencyStatsMap = LatencyCollector.getLatencyStats();
 
         DiskStats    currDisk = DiskCollector.getDiskStats();
         NetworkStats currNet  = NetworkCollector.getNetworkStats();
@@ -114,11 +117,11 @@ public class MetricsHttpServer {
 
         // Build Prometheus format
         cachedPrometheus = PrometheusExporter.export(
-            cpu, mem, load, currDisk, currNet, tcp, topProcs,
+            cpu, mem, load, currDisk, currNet, tcp, latencyStatsMap, topProcs,
             diskReadKBps, diskWriteKBps, netRxKBps, netTxKBps, now);
 
         // Build JSON (kept for compatibility)
-        cachedJson = buildJson(cpu, mem, load, tcp,
+        cachedJson = buildJson(cpu, mem, load, tcp, latencyStatsMap,
             diskReadKBps, diskWriteKBps, netRxKBps, netTxKBps,
             topProcs, now);
 
@@ -177,6 +180,7 @@ public class MetricsHttpServer {
 
     private static String buildJson(
         CpuStats cpu, MemoryStats mem, LoadAvgStats load, TCPConnectionStats tcp,
+        Map<String, LatencyStats> latencyStatsMap,
         double diskReadKBps, double diskWriteKBps,
         double netRxKBps, double netTxKBps,
         List<ProcessInfo> procs, long ts)
@@ -216,6 +220,20 @@ public class MetricsHttpServer {
             c++;
         }
         sb.append("],");
+
+        sb.append("\"latency_stats_per_target\":{");
+        for(String target : latencyStatsMap.keySet())
+        {
+            LatencyStats stats = latencyStatsMap.get(target);
+            sb.append("\"").append(target).append("\":{");
+            sb.append("\"rtt\":").append(fmt(stats.rtt)).append(",");
+            sb.append("\"min\":").append(fmt(stats.min)).append(",");
+            sb.append("\"avg\":").append(fmt(stats.avg)).append(",");
+            sb.append("\"max\":").append(fmt(stats.max)).append(",");
+            sb.append("\"jitter\":").append(fmt(stats.jitter));
+            sb.append("}");
+        }
+        sb.append("},");
 
         sb.append("\"disk_read_kbps\":").append(fmt(diskReadKBps)).append(',');
         sb.append("\"disk_write_kbps\":").append(fmt(diskWriteKBps)).append(',');
