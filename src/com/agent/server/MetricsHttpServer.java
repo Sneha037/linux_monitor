@@ -221,9 +221,11 @@ public class MetricsHttpServer {
         }
         sb.append("],");
 
-        sb.append("\"latency_stats_per_target\":{");
+        sb.append("\"latency_stats_per_target\":{"); c = 0;
         for(String target : latencyStatsMap.keySet())
         {
+            if(c>0)
+                sb.append(",");
             LatencyStats stats = latencyStatsMap.get(target);
             sb.append("\"").append(target).append("\":{");
             sb.append("\"rtt\":").append(fmt(stats.rtt)).append(",");
@@ -232,6 +234,8 @@ public class MetricsHttpServer {
             sb.append("\"max\":").append(fmt(stats.max)).append(",");
             sb.append("\"jitter\":").append(fmt(stats.jitter));
             sb.append("}");
+
+            c++;
         }
         sb.append("},");
 
